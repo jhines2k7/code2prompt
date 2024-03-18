@@ -62,6 +62,10 @@ struct Cli {
     /// Include git diff
     #[clap(short = 'd', long)]
     diff: bool,
+
+    /// Output the prompt to the terminal
+    #[clap(short = 't', long)]
+    terminal: bool,
 }
 
 fn main() {
@@ -124,7 +128,7 @@ fn main() {
     spinner.finish_with_message(format!("{}", "Done!".green()));
 
     let mut data = json!({
-        "absolute_code_path": args.path.canonicalize().unwrap().display().to_string(),
+        "absolute_code_path": args.path.display().to_string(),
         "source_tree": tree,
         "files": files,
         "git_diff": git_diff,
@@ -190,15 +194,17 @@ fn main() {
         );
     }
 
-    cli_clipboard::set_contents(rendered.into()).expect("Failed to copy output to clipboard");
-
-    println!(
-        "{}{}{} {}",
-        "[".bold().white(),
-        "✓".bold().green(),
-        "]".bold().white(),
-        "Prompt copied to clipboard!".green()
-    );
+    // Print the rendered output to the console if --terminal flag is set
+    if args.terminal {
+        println!(
+            "{}{}{} {}",
+            "[".bold().white(),
+            "✓".bold().green(),
+            "]".bold().white(),
+            "Generated prompt:".green()
+        );
+        println!("{}", rendered);
+    }
 
     if let Some(output_path) = args.output {
         let file = std::fs::File::create(&output_path).expect("Failed to create output file");
@@ -211,6 +217,16 @@ fn main() {
             "✓".bold().green(),
             "]".bold().white(),
             format!("Prompt written to file: {}", output_path).green()
+        );
+    } else if !args.terminal {
+        // If --output flag is not set and --terminal flag is not set,
+        // print a message indicating that the prompt is not being output anywhere
+        println!(
+            "{}{}{} {}",
+            "[".bold().white(),
+            "!".bold().yellow(),
+            "]".bold().white(),
+            "No output file specified and --terminal flag not set. Prompt is not being output.".yellow()
         );
     }
 }
@@ -259,16 +275,14 @@ fn traverse_directory(
 ) -> Result<(String, Vec<serde_json::Value>)> {
     let mut files = Vec::new();
 
-    let canonical_root_path = root_path.canonicalize()?;
-
-    let tree = WalkBuilder::new(&canonical_root_path)
+    let tree = WalkBuilder::new(root_path)
         .git_ignore(true)
         .build()
         .filter_map(|e| e.ok())
-        .fold(Tree::new(label(&canonical_root_path)), |mut root, entry| {
+        .fold(Tree::new(label(root_path)), |mut root, entry| {
             let path = entry.path();
             // Calculate the relative path from the root directory to this entry
-            if let Ok(relative_path) = path.strip_prefix(&canonical_root_path) {
+            if let Ok(relative_path) = path.strip_prefix(root_path) {
                 let mut current_tree = &mut root;
                 for component in relative_path.components() {
                     let component_str = component.as_os_str().to_string_lossy().to_string();
@@ -318,8 +332,7 @@ fn traverse_directory(
                         let exclude_folders_list: Vec<&str> =
                             exclude_folders_str.split(',').map(|s| s.trim()).collect();
                         if let Some(parent_path) = path.parent() {
-                            let relative_parent_path =
-                                parent_path.strip_prefix(&canonical_root_path).unwrap();
+                            let relative_parent_path = parent_path.strip_prefix(root_path).unwrap();
                             if exclude_folders_list
                                 .iter()
                                 .any(|folder| relative_parent_path.starts_with(folder))
