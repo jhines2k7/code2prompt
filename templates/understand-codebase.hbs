@@ -1,0 +1,63 @@
+Project Path: {{ absolute_code_path }}
+
+I'd like your help understanding this codebase. Please analyze the code thoroughly and provide an overview of the following aspects:
+
+Source Tree:
+```
+{{ source_tree }}
+```
+
+{{#each files}}
+
+{{#if code}}
+
+`{{path}}`:
+
+{{code}}
+
+{{/if}}
+
+{{/each}}
+
+When analyzing the codebase, please cover the following points:
+
+1. Purpose and Functionality:
+   - What is the main purpose of this codebase?
+   - What are the key features and functionalities it provides?
+
+2. Architecture and Design:
+   - What is the high-level architecture of the codebase?
+   - How is the codebase structured in terms of directories and files?
+   - What are the main components, modules, or classes, and how do they interact?
+   - Are there any design patterns or architectural patterns used?
+
+3. Language and Dependencies:
+   - What programming language(s) is the codebase written in?
+   - Are there any major frameworks, libraries, or dependencies used?
+   - How are the dependencies managed (e.g., package manager)?
+
+4. Data Flow and Control Flow:
+   - How does data flow through the application?
+   - What are the main entry points and exit points of the application?
+   - Are there any significant data structures or algorithms used?
+
+5. Configuration and Environment:
+   - Are there any configuration files or environment variables used?
+   - What is the purpose of each configuration file or variable?
+   - Are there any specific setup or deployment requirements?
+
+6. Testing and Quality Assurance:
+   - Is there a testing framework or approach used in the codebase?
+   - Where are the test files located?
+   - Are there any continuous integration or continuous deployment practices in place?
+
+7. Documentation and Maintainability:
+   - Is there any documentation available (e.g., README, API docs, architecture diagrams)?
+   - How well-commented and self-explanatory is the code?
+   - Are there any areas that could benefit from improved documentation or code comments?
+
+Please provide a clear and concise explanation for each point, highlighting the most important aspects of the codebase. If there are any parts of the codebase that are unclear or confusing, please point them out and suggest ways to clarify them.
+
+Additionally, if you identify any potential areas for improvement or best practices that could be applied, feel free to mention them as well.
+
+Thank you for your help in understanding this codebase better!
