@@ -17,7 +17,6 @@ jobs:
       fail-fast: false
       matrix:
         job:
-          # { os, target, cargo-options, features, use-cross, toolchain }
           - { os: ubuntu-latest  , target: arm-unknown-linux-gnueabihf , use-cross: use-cross }
           - { os: ubuntu-latest  , target: aarch64-unknown-linux-gnu   , use-cross: use-cross }
           - { os: ubuntu-latest  , target: i686-unknown-linux-gnu      , use-cross: use-cross }
@@ -39,18 +38,24 @@ jobs:
         target: ${{ matrix.job.target }}
         override: true
         default: true
-    - name: Install cross-compilation dependencies
-      if: matrix.job.target == 'arm-unknown-linux-gnueabihf' || matrix.job.target == 'aarch64-unknown-linux-gnu'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gcc-arm-linux-gnueabihf gcc-aarch64-linux-gnu
+    - name: Install musl tools (Linux)
+      if: contains(matrix.job.target, 'musl')
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
+    - name: Install MinGW toolchain (Windows)
+      if: contains(matrix.job.target, 'windows-gnu')
+      uses: egor-tensin/setup-mingw@v2
+      with:
+        platform: ${{ matrix.job.target }}
     - name: Build release binary
       uses: actions-rs/cargo@v1
       with:
         use-cross: ${{ matrix.job.use-cross }}
         command: build
         args: --release --target ${{ matrix.job.target }} --verbose
-    - name: Strip release binary (unix)
+      env:
+        OPENSSL_DIR: /usr/local/opt/openssl
+        PKG_CONFIG_ALLOW_CROSS: 1
+    - name: Strip release binary (Unix)
       if: matrix.job.target != 'x86_64-pc-windows-msvc'
       run: strip "target/${{ matrix.job.target }}/release/code2prompt"
     - name: Upload release asset

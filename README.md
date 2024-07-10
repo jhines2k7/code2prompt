@@ -1,128 +1,178 @@
-# `code2prompt`
+# code2prompt
 
-A CLI tool to convert your codebase into a single LLM prompt with source tree, prompt templating, and token counting.
+[![crates.io](https://img.shields.io/crates/v/code2prompt.svg#cache1)](https://crates.io/crates/code2prompt)
+[![LICENSE](https://img.shields.io/github/license/mufeedvh/code2prompt.svg#cache1)](https://github.com/mufeedvh/code2prompt/blob/master/LICENSE)
 
----
+<h1 align="center">
+  <a href="https://github.com/mufeedvh/code2prompt"><img src=".assets/code2prompt-screenshot.png" alt="code2prompt"></a>
+</h1>
+
+`code2prompt` is a command-line tool (CLI) that converts your codebase into a single LLM prompt with a source tree, prompt templating, and token counting.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Templates](#templates)
+- [User Defined Variables](#user-defined-variables)
+- [Tokenizers](#tokenizers)
+- [Build From Source](#build-from-source)
+- [Contribution](#contribution)
+- [License](#license)
+- [Support The Author](#support-the-author)
+
+## Features
 
 You can run this tool on the entire directory and it would generate a well-formatted Markdown prompt detailing the source tree structure, and all the code. You can then upload this document to either GPT or Claude models with higher context windows and ask it to:
+
+- Quickly generate LLM prompts from codebases of any size.
+- Customize prompt generation with Handlebars templates. (See the [default template](src/default_template.hbs))
+- Respects `.gitignore`.
+- Filter and exclude files using glob patterns.
+- Display the token count of the generated prompt. (See [Tokenizers](#tokenizers) for more details)
+- Optionally include Git diff output (staged files) in the generated prompt.
+- Automatically copy the generated prompt to the clipboard.
+- Save the generated prompt to an output file.
+- Exclude files and folders by name or path.
+- Add line numbers to source code blocks.
+
+You can customize the prompt template to achieve any of the desired use cases. It essentially traverses a codebase and creates a prompt with all source files combined. In short, it automates copy-pasting multiple source files into your prompt and formatting them along with letting you know how many tokens your code consumes.
+
+## Installation
+
+### Latest Release
+
+Download the latest binary for your OS from [Releases](https://github.com/mufeedvh/code2prompt/releases) OR install with `cargo`:
+
+```sh
+cargo install code2prompt
+```
+
+For unpublished builds:
+
+```sh
+cargo install --git https://github.com/mufeedvh/code2prompt
+```
+
+### Prerequisites
+
+For building `code2prompt` from source, you need to have these tools installed:
+
+- [Git](https://git-scm.org/downloads)
+- [Rust](https://rust-lang.org/tools/install)
+- Cargo (Automatically installed when installing Rust)
+
+```sh
+git clone https://github.com/mufeedvh/code2prompt.git
+cd code2prompt/
+cargo build --release
+```
+
+The first command clones the `code2prompt` repository to your local machine. The next two commands change into the `code2prompt` directory and build it in release mode.
+
+## Usage
+
+Generate a prompt from a codebase directory:
+
+```sh
+code2prompt path/to/codebase
+```
+
+Use a custom Handlebars template file:
+
+```sh
+code2prompt path/to/codebase -t path/to/template.hbs
+```
+
+Filter files using glob patterns:
+
+```sh
+code2prompt path/to/codebase --include="*.rs,*.toml"
+```
+
+Exclude files using glob patterns:
+
+```sh
+code2prompt path/to/codebase --exclude="*.txt,*.md"
+```
+
+Exclude files/folders from the source tree based on exclude patterns:
+
+```sh
+code2prompt path/to/codebase --exclude="*.npy,*.wav" --exclude-from-tree
+```
+
+Display the token count of the generated prompt:
+
+```sh
+code2prompt path/to/codebase --tokens
+```
+
+Specify a tokenizer for token count:
+
+```sh
+code2prompt path/to/codebase --tokens --encoding=p50k
+```
+
+Supported tokenizers: `cl100k`, `p50k`, `p50k_edit`, `r50k_bas`.
+> [!NOTE]  
+> See [Tokenizers](#tokenizers) for more details.
+
+Save the generated prompt to an output file:
+
+```sh
+code2prompt path/to/codebase --output=output.txt
+```
+
+Print output as JSON:
+
+```sh
+code2prompt path/to/codebase --json
+```
+
+The JSON output will have the following structure:
+
+```json
+{
+  "prompt": "<Generated Prompt>", 
+  "directory_name": "codebase",
+  "token_count": 1234,
+  "model_info": "ChatGPT models, text-embedding-ada-002",
+  "files": []
+}
+```
+
+Generate a Git commit message (for staged files):
+
+```sh
+code2prompt path/to/codebase --diff -t templates/write-git-commit.hbs
+```
+
+Generate a Pull Request with branch comparing (for staged files):
+
+```sh
+code2prompt path/to/codebase --git-diff-branch 'main, development' --git-log-branch 'main, development' -t templates/write-github-pull-request.hbs
+```
+
+Add line numbers to source code blocks:
+
+```sh
+code2prompt path/to/codebase --line-number
+```
+
+Disable wrapping code inside markdown code blocks:
+
+```sh
+code2prompt path/to/codebase --no-codeblock
+```
 
 - Rewrite the code to another language.
 - Find bugs/security vulnerabilities.
 - Document the code.
 - Implement new features.
 
-You can customize the prompt template to achieve any of the desired use cases. It essentially traverses a codebase and creates a prompt with all source files combined. In short, it automates copy-pasting multiple source files into your prompt and formatting them along with letting you know how many tokens your code consumes. 
-
 > I initially wrote this for personal use to utilize Claude 3.0's 200K context window and it has proven to be pretty useful so I decided to open-source it!
-
-[![crates.io](https://img.shields.io/crates/v/code2prompt.svg#cache)](https://crates.io/crates/code2prompt)
-[![LICENSE](https://img.shields.io/github/license/mufeedvh/code2prompt.svg#cache)](https://github.com/mufeedvh/code2prompt/blob/master/LICENSE)
-
-<h1 align="center">
-  <a href="https://github.com/mufeedvh/code2prompt"><img src=".assets/code2prompt-screenshot.png" alt="code2prompt"></a>
-</h1>
-
-## Table of Contents
-
-* [Features](#features)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Templates](#templates)
-* [User Defined Variables](#user-defined-variables)
-* [Build From Source](#build-from-source)
-* [Contribution](#contribution)
-* [License](#license)
-* [Support The Author](#liked-the-project)
-
-## Features
-
-- Quickly generate LLM prompts from codebases of any size.
-- Customize prompt generation with Handlebars templates. (See the [default template](src/default_template.hbs))
-- Follows `.gitignore`.
-- Filter and exclude files by extension.
-- Display the token count of the generated prompt. (See [Tokenizers](#Tokenizers) for more details)
-- Optionally include the Git diff output (staged files) in the generated prompt.
-- Copy the generated prompt to the clipboard on generation.
-- Save the generated prompt to an output file.
-
-## Installation
-
-Download the latest binary for your OS from [Releases](https://github.com/mufeedvh/code2prompt/releases) OR install with `cargo`:
-
-```
-$ cargo install code2prompt
-```
-
-## Usage
-
-
-Generate a prompt from a codebase directory:
-
-```
-code2prompt path/to/codebase
-```
-
-Use a custom Handlebars template file:
-
-```
-code2prompt path/to/codebase -t path/to/template.hbs
-```
-
-Filter files by extension:
-
-```
-code2prompt path/to/codebase -f rs,toml
-```
-
-Exclude files by extension:
-
-```  
-code2prompt path/to/codebase -e txt,md
-```
-
-Exclude files by name:
-
-```
-code2prompt path/to/codebase --exclude-files "file1.txt,file2.txt"
-```
-
-Exclude files by folder/directory path:
-
-```
-code2prompt path/to/codebase --exclude-folders "tests,docs"
-```
-
-Display token count of the generated prompt:
-
-```
-code2prompt path/to/codebase --tokens
-```
-
-Specify tokenizer for token count:
-
-```
-code2prompt path/to/codebase --tokens -e p50k
-```
-
-Supported tokenizers: `c100k`, `p50k`, `p50k_edit`, `r50k_base`.
-
-> [!NOTE]  
-> See [Tokenizers](#Tokenizers) for more details.
-
-Save the generated prompt to an output file:
-
-```
-$ code2prompt path/to/codebase -o output.txt  
-```
-
-Generate git committ message (for staged files):
-
-```
-$ code2prompt path/to/codebase --diff -t "templates/write-git-commit.hbs"    
-```
-
-
-
 
 ## Templates
 
@@ -136,13 +186,17 @@ Use this template to generate prompts for documenting the code. It will add docu
 
 Use this template to generate prompts for finding potential security vulnerabilities in the codebase. It will look for common security issues and provide recommendations on how to fix or mitigate them.
 
-### [`clean-up-code.hbs`](templates/clean-up-code.hbs) 
+### [`clean-up-code.hbs`](templates/clean-up-code.hbs)
 
 Use this template to generate prompts for cleaning up and improving the code quality. It will look for opportunities to improve readability, adherence to best practices, efficiency, error handling, and more.
 
 ### [`fix-bugs.hbs`](templates/fix-bugs.hbs)
 
 Use this template to generate prompts for fixing bugs in the codebase. It will help diagnose issues, provide fix suggestions, and update the code with proposed fixes.
+
+### [`write-github-pull-request.hbs`](templates/write-github-pull-request.hbs)
+
+Use this template to create GitHub pull request description in markdown by comparing the git diff and git log of two branches.
 
 ### [`write-github-readme.hbs`](templates/write-github-readme.hbs)
 
@@ -158,7 +212,7 @@ Use this template to generate prompts for improving the performance of the codeb
 
 You can use these templates by passing the `-t` flag followed by the path to the template file. For example:
 
-```
+```sh
 code2prompt path/to/codebase -t templates/document-the-code.hbs
 ```
 
@@ -189,24 +243,6 @@ For more context on the different tokenizers, see the [OpenAI Cookbook](https://
 
 `code2prompt` makes it easy to generate prompts for LLMs from your codebase. It traverses the directory, builds a tree structure, and collects information about each file. You can customize the prompt generation using Handlebars templates. The generated prompt is automatically copied to your clipboard and can also be saved to an output file. `code2prompt` helps streamline the process of creating LLM prompts for code analysis, generation, and other tasks.
 
-## Build From Source
-
-### Prerequisites
-
-For building `code2prompt` from source, you need to have these tools installed:
-
-* [Git](https://git-scm.org/downloads)
-* [Rust](https://rust-lang.org/tools/install) 
-* Cargo (Automatically installed when installing Rust)
-
-```
-$ git clone https://github.com/mufeedvh/code2prompt.git
-$ cd code2prompt/
-$ cargo build --release
-```
-
-The first command clones the `code2prompt` repository to your local machine. The next two commands change into the `code2prompt` directory and build it in release mode.
-
 ## Contribution
 
 Ways to contribute:
@@ -223,6 +259,4 @@ Licensed under the MIT License, see <a href="https://github.com/mufeedvh/code2pr
 
 ## Liked the project?
 
-If you liked the project and found it useful, please give it a :star: and consider supporting the author!
-
----
+If you liked the project and found it useful, please give it a :star: and consider supporting the authors!
